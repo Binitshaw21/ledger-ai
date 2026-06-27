@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledger AI | Enterprise Fraud Intelligence Platform</title>
+    <meta name="description" content="Enterprise-grade AI-powered audit copilot using Federated Learning, Graph Neural Networks, and Fully Homomorphic Encryption for real-time financial fraud detection.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #00f0ff; --purple: #a855f7; --pink: #ec4899;
+            --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+            --dark-bg: #030108; --panel-bg: rgba(8,6,20,0.75);
+            --glass-border: rgba(0,240,255,0.15);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--dark-bg); color:#e2e8f0; font-family:'Inter',-apple-system,sans-serif; overflow:hidden; height:100vh; }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(0,240,255,0.2); border-radius:3px; }
+
+        /* ===== LANDING ===== */
+        #landing-phase { position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; transition:opacity 0.8s; }
+        #landing-canvas { position:absolute; inset:0; z-index:0; }
+        .landing-overlay { position:relative; z-index:10; text-align:center; animation:landIn 2s ease-out; }
+        @keyframes landIn { from{opacity:0;transform:translateY(40px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .landing-title { font-size:clamp(3rem,8vw,7rem); font-weight:900; letter-spacing:0.15em; background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink)); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1.1; animation:tGlow 4s ease-in-out infinite alternate; }
+        @keyframes tGlow { 0%{filter:brightness(1) drop-shadow(0 0 20px rgba(0,240,255,0.3))} 100%{filter:brightness(1.15) drop-shadow(0 0 40px rgba(168,85,247,0.5))} }
+        .landing-sub { font-size:1.1rem; color:rgba(255,255,255,0.5); letter-spacing:0.4em; text-transform:uppercase; margin-top:0.5rem; font-weight:300; }
+        .landing-tag { margin-top:2rem; font-size:0.9rem; color:var(--cyan); font-family:'JetBrains Mono',monospace; min-height:24px; }
+        .landing-badges { display:flex; gap:1rem; justify-content:center; margin-top:2rem; flex-wrap:wrap; }
+        .lbadge { padding:0.4rem 1rem; border-radius:9999px; font-size:0.7rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; border:1px solid; animation:bPulse 3s ease-in-out infinite; }
+        .lbadge.c { border-color:var(--cyan); color:var(--cyan); background:rgba(0,240,255,0.08); }
+        .lbadge.p { border-color:var(--purple); color:var(--purple); background:rgba(168,85,247,0.08); animation-delay:0.5s; }
+        .lbadge.k { border-color:var(--pink); color:var(--pink); background:rgba(236,72,153,0.08); animation-delay:1s; }
+        @keyframes bPulse { 0%,100%{opacity:0.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.05)} }
+        .enter-btn { margin-top:3rem; padding:1rem 3rem; font-size:1rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:#000; background:linear-gradient(135deg,var(--cyan),var(--purple)); border:none; border-radius:60px; cursor:pointer; position:relative; overflow:hidden; transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .enter-btn::before { content:''; position:absolute; inset:-2px; background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink),var(--cyan)); background-size:300% 300%; border-radius:62px; z-index:-1; animation:bRot 3s linear infinite; filter:blur(8px); opacity:0.6; }
+        @keyframes bRot { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
+        .enter-btn:hover { transform:scale(1.08); box-shadow:0 0 60px rgba(0,240,255,0.4); }
+        #warp-flash { position:fixed; inset:0; z-index:1001; background:white; opacity:0; pointer-events:none; transition:opacity 0.15s; }
+
+        /* ===== LOGIN ===== */
+        #login-phase { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; background:radial-gradient(ellipse at center,rgba(10,5,30,0.95),rgba(3,1,8,0.99)); }
+        .login-card { background:var(--panel-bg); backdrop-filter:blur(24px); border:1px solid var(--glass-border); border-radius:24px; padding:3rem; width:440px; max-width:90vw; animation:lSlide 0.8s cubic-bezier(0.175,0.885,0.32,1.275); position:relative; z-index:10; }
+        @keyframes lSlide { from{opacity:0;transform:translateY(60px) scale(0.9)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .login-input, .login-select { width:100%; padding:0.85rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:white; font-size:0.9rem; margin-bottom:0.8rem; outline:none; transition:border-color 0.3s; font-family:'Inter',sans-serif; appearance:none; -webkit-appearance:none; }
+        .login-select option { background:#0a0a1a; color:white; }
+        .login-input:focus, .login-select:focus { border-color:var(--cyan); }
+        .login-input::placeholder { color:rgba(255,255,255,0.25); }
+        .login-submit { width:100%; padding:0.9rem; border:none; border-radius:12px; color:#000; font-weight:700; font-size:0.95rem; cursor:pointer; letter-spacing:0.05em; transition:all 0.3s; margin-top:0.5rem; }
+        .login-submit:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,240,255,0.3); }
+        .fp-wrap { width:80px; height:80px; margin:0 auto 1.5rem; position:relative; }
+        .fp-icon { font-size:3rem; animation:fpS 2s ease-in-out infinite; }
+        .fp-ring { position:absolute; inset:-8px; border:2px solid transparent; border-radius:50%; animation:fpR 1.5s linear infinite; }
+        @keyframes fpS { 0%,100%{opacity:0.3} 50%{opacity:1} }
+        @keyframes fpR { to{transform:rotate(360deg)} }
+        .zt-badge { display:inline-flex; align-items:center; gap:0.4rem; padding:0.3rem 0.8rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; font-size:0.65rem; color:var(--green); font-weight:600; }
+        .role-indicator { text-align:center; margin-bottom:1.5rem; }
+        .role-indicator .ri-label { font-size:0.65rem; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem; }
+
+        /* ===== APP SHARED ===== */
+        #analyst-app, #admin-app { display:none; height:100vh; flex-direction:column; }
+        .ticker-wrap { width:100%; overflow:hidden; background:rgba(0,0,0,0.95); border-bottom:1px solid rgba(0,240,255,0.2); flex-shrink:0; }
+        .ticker { display:inline-block; white-space:nowrap; padding-right:100%; animation:tick 35s linear infinite; font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:var(--cyan); padding:6px 0; }
+        @keyframes tick { 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-100%,0,0)} }
+        #bg-canvas, #admin-bg-canvas { position:fixed; inset:0; z-index:-1; }
+        .glass { background:var(--panel-bg); backdrop-filter:blur(16px); border:1px solid var(--glass-border); transition:all 0.3s; }
+        .glass:hover { border-color:rgba(0,240,255,0.25); }
+        .sidebar { width:260px; flex-shrink:0; border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; padding:1.5rem 0; background:rgba(5,3,15,0.6); backdrop-filter:blur(20px); }
+        .sidebar-brand { padding:0 1.5rem; margin-bottom:2rem; font-size:1.3rem; font-weight:800; letter-spacing:0.12em; }
+        .nav-btn { width:calc(100% - 1.5rem); margin:0 0.75rem; text-align:left; padding:0.75rem 1rem; border-radius:10px; border:1px solid transparent; background:transparent; color:rgba(255,255,255,0.45); font-size:0.85rem; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; gap:0.6rem; }
+        .nav-btn:hover { color:white; background:rgba(255,255,255,0.06); }
+        .nav-btn.active { color:var(--cyan); background:rgba(0,240,255,0.08); border-color:rgba(0,240,255,0.2); }
+        .nav-btn.active-admin { color:var(--purple); background:rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2); }
+        .nav-btn i { width:18px; text-align:center; font-size:0.9rem; }
+        .tab-content { display:none; animation:tabIn 0.5s ease; }
+        .tab-content.active { display:block; }
+        @keyframes tabIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+        /* KPI Cards */
+        .kpi { padding:1.25rem 1.5rem; border-radius:16px; position:relative; overflow:hidden; }
+        .kpi::after { content:''; position:absolute; top:0; right:0; width:80px; height:80px; border-radius:50%; filter:blur(40px); opacity:0.15; }
+        .kpi.c::after{background:var(--cyan)} .kpi.p::after{background:var(--purple)} .kpi.k::after{background:var(--pink)} .kpi.g::after{background:var(--green)} .kpi.r::after{background:var(--red)} .kpi.a::after{background:var(--amber)}
+        .kpi-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.4); font-weight:600; }
+        .kpi-val { font-size:2rem; font-weight:800; margin-top:0.3rem; font-family:'JetBrains Mono',monospace; }
+        .kpi-sub { font-size:0.7rem; color:rgba(255,255,255,0.3); margin-top:0.2rem; }
+
+        /* Tags */
+        .tag { display:inline-flex; align-items:center; gap:0.3rem; padding:0.2rem 0.6rem; border-radius:6px; font-size:0.6rem; font-weight:600; letter-spacing:0.05em; }
+        .tag.fhe { background:rgba(168,85,247,0.12); color:var(--purple); border:1px solid rgba(168,85,247,0.25); }
+        .tag.xai { background:rgba(0,240,255,0.08); color:var(--cyan); border:1px solid rgba(0,240,255,0.2); }
+        .tag.eu { background:rgba(34,197,94,0.08); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+        .tag.gnn { background:rgba(236,72,153,0.08); color:var(--pink); border:1px solid rgba(236,72,153,0.2); }
+        .tag.danger { background:rgba(239,68,68,0.1); color:var(--red); border:1px solid rgba(239,68,68,0.25); }
+        .tag.warn { background:rgba(245,158,11,0.1); color:var(--amber); border:1px solid rgba(245,158,11,0.25); }
+
+        /* Tables */
+        .dtable { width:100%; text-align:left; border-collapse:collapse; }
+        .dtable th { padding:0.9rem 1rem; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.35); font-weight:600; background:rgba(0,0,0,0.4); font-family:'JetBrains Mono',monospace; }
+        .dtable td { padding:0.8rem 1rem; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.03); }
+        .dtable tbody tr { transition:background 0.2s; }
+        .dtable tbody tr:hover { background:rgba(0,240,255,0.03); }
+
+        .mono { font-family:'JetBrains Mono',monospace; }
+        .grad-text { background:linear-gradient(135deg,var(--cyan),var(--purple)); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .grad-text-admin { background:linear-gradient(135deg,var(--red),var(--purple)); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+        .btn-sm { padding:0.35rem 0.8rem; border-radius:8px; font-size:0.7rem; font-weight:600; border:none; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.25s; }
+        .btn-sm:hover { transform:translateY(-1px); }
+
+        /* FL */
+        .fl-node { display:flex; align-items:center; gap:0.8rem; padding:0.7rem 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .fl-node:last-child { border-bottom:none; }
+        .fl-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .fl-dot.synced { background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+        .fl-dot.syncing { background:var(--cyan); box-shadow:0 0 8px var(--cyan); animation:pulse 1s infinite; }
+        .fl-dot.pending { background:var(--amber); box-shadow:0 0 8px var(--amber); animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 4px currentColor} 50%{opacity:0.4;box-shadow:none} }
+        .fl-bar-bg { width:100%; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; }
+        .fl-bar { height:100%; border-radius:2px; transition:width 2s ease; }
+
+        /* XAI */
+        .xai-bar-wrap { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; }
+        .xai-label { font-size:0.65rem; width:120px; color:rgba(255,255,255,0.5); text-align:right; flex-shrink:0; }
+        .xai-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+        .xai-bar { height:100%; border-radius:3px; transition:width 1.5s cubic-bezier(0.23,1,0.32,1); }
+        .xai-val { font-size:0.6rem; font-family:'JetBrains Mono',monospace; width:40px; color:rgba(255,255,255,0.4); }
+
+        /* Sidebar extras */
+        .sidebar-status { margin:auto 1rem 0.5rem; padding:0.6rem 0.8rem; border-radius:10px; font-size:0.65rem; font-weight:600; display:flex; align-items:center; gap:0.5rem; }
+        .s-dot { width:6px; height:6px; border-radius:50%; animation:pulse 2s infinite; }
+
+        /* Disconnect / Logout button */
+        .disconnect-btn { margin:0.5rem 1rem; padding:0.6rem 0.8rem; border-radius:10px; border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.06); color:var(--red); font-size:0.75rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.3s; display:flex; align-items:center; gap:0.5rem; justify-content:center; }
+        .disconnect-btn:hover { background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); }
+
+        /* Connection badge */
+        .conn-badge { display:flex; align-items:center; gap:0.4rem; font-size:0.6rem; }
+        .conn-dot { width:6px; height:6px; border-radius:50%; }
+        .conn-dot.ok { background:var(--green); box-shadow:0 0 6px var(--green); }
+        .conn-dot.fail { background:var(--red); box-shadow:0 0 6px var(--red); }
+
+        /* Admin form */
+        .admin-input { width:100%; padding:0.7rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; font-size:0.85rem; outline:none; font-family:'Inter',sans-serif; transition:border-color 0.3s; }
+        .admin-input:focus { border-color:var(--purple); }
+        .admin-input::placeholder { color:rgba(255,255,255,0.2); }
+        .admin-select { width:100%; padding:0.7rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; font-size:0.85rem; outline:none; font-family:'Inter',sans-serif; appearance:none; -webkit-appearance:none; }
+        .admin-select option { background:#0a0a1a; }
+
+        /* Star rating */
+        .stars { color:var(--amber); font-size:0.8rem; letter-spacing:2px; }
+
+        /* Chevron */
+        details summary { cursor:pointer; list-style:none; }
+        details summary::-webkit-details-marker { display:none; }
+        details[open] summary .chev { transform:rotate(90deg); }
+        .chev { transition:transform 0.3s; display:inline-block; }
+
+        /* Chart containers */
+        .chart-box { position:relative; }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================
+     PHASE 1: CINEMATIC ANTI-GRAVITY LANDING
+     ============================================================ -->
+<div id="warp-flash"></div>
+<div id="landing-phase">
+    <canvas id="landing-canvas"></canvas>
+    <div class="landing-overlay">
+        <h1 class="landing-title">LEDGER AI</h1>
+        <p class="landing-sub">Enterprise Fraud Intelligence</p>
+        <p class="landing-tag" id="landing-tag"></p>
+        <div class="landing-badges">
+            <span class="lbadge c"><i class="fa-solid fa-diagram-project"></i> Federated Learning</span>
+            <span class="lbadge p"><i class="fa-solid fa-lock"></i> FHE Encrypted</span>
+            <span class="lbadge k"><i class="fa-solid fa-shield-halved"></i> Zero Trust</span>
+        </div>
+        <button class="enter-btn" onclick="enterSystem()"><i class="fa-solid fa-rocket" style="margin-right:8px"></i> ENTER SYSTEM</button>
+    </div>
+</div>
+
+<!-- ============================================================
+     PHASE 2: DUAL-ROLE LOGIN SCREEN
+     ============================================================ -->
+<div id="login-phase">
+    <canvas id="login-bg-canvas" style="position:absolute;inset:0;z-index:0;"></canvas>
+    <div class="login-card">
+        <!-- Role Indicator Icon -->
+        <div class="fp-wrap" id="login-icon-wrap">
+            <div class="fp-ring" id="login-ring" style="border-top-color:var(--cyan);"></div>
+            <div style="text-align:center;padding-top:12px;">
+                <i class="fa-solid fa-fingerprint fp-icon" id="login-icon" style="color:var(--cyan);"></i>
+            </div>
+        </div>
+
+        <div class="role-indicator">
+            <div class="ri-label">Select Access Level</div>
+        </div>
+
+        <!-- ROLE DROPDOWN -->
+        <select class="login-select" id="role-select" onchange="onRoleChange()">
+            <option value="analyst">🛡️ Field Analyst (Officer)</option>
+            <option value="admin">⚙️ System Administrator</option>
+        </select>
+
+        <input type="text" class="login-input" placeholder="Email (e.g. analyst@kpmg.com)" id="login-email" oninput="onEmailInput()">
+        <input type="password" class="login-input" placeholder="Encryption Passphrase" id="login-pass">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <span class="zt-badge"><i class="fa-solid fa-shield-check"></i> Zero Trust Active</span>
+            <span class="tag fhe"><i class="fa-solid fa-lock"></i> FHE</span>
+            <span class="conn-badge" id="login-conn"><span class="conn-dot" id="login-conn-dot"></span><span id="login-conn-text">Checking...</span></span>
+        </div>
+
+        <button class="login-submit" id="login-btn" style="background:linear-gradient(135deg,var(--cyan),var(--purple));" onclick="handleLogin()">
+            <i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> <span id="login-btn-text">REGISTER NOW</span>
+        </button>
+        <p style="text-align:center;margin-top:0.8rem;font-size:0.75rem;"><a href="#" id="toggle-signup" onclick="toggleSignUp(event)" style="color:var(--cyan);text-decoration:none;">Already have an account? Log In</a></p>
+        <p style="text-align:center;margin-top:1rem;font-size:0.65rem;color:rgba(255,255,255,0.15);">Compliant with EU AI Act 2025 & GDPR • RBAC Enabled</p>
+    </div>
+</div>
+
+<!-- ============================================================
+     PHASE 3A: ANALYST DASHBOARD
+     ============================================================ -->
+<div id="analyst-app">
+    <canvas id="bg-canvas"></canvas>
+    <!-- Ticker -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span style="color:var(--red)"><i class="fa-solid fa-triangle-exclamation"></i> GLOBAL ALERT:</span> Phishing campaign targeting financial controllers &nbsp;|&nbsp;
+            <span style="color:var(--purple)"><i class="fa-solid fa-network-wired"></i> GNN SYNC:</span> 4,201 new shell company nodes added &nbsp;|&nbsp;
+            <span style="color:var(--green)"><i class="fa-solid fa-shield-halved"></i> OCR MODEL:</span> Vision Transformers processing physical receipts &nbsp;|&nbsp;
+            <span style="color:var(--cyan)"><i class="fa-solid fa-diagram-project"></i> FEDERATED:</span> Round #847 aggregation — ε=0.5 differential privacy &nbsp;|&nbsp;
+            <span style="color:var(--pink)"><i class="fa-solid fa-lock"></i> FHE VAULT:</span> CKKS scheme active — encrypted ledger processing &nbsp;|&nbsp;
+            <span style="color:var(--amber)"><i class="fa-solid fa-brain"></i> XAI:</span> SHAP explanations for 12 flagged transactions
+        </div>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden;position:relative;z-index:10;">
+        <!-- Analyst Sidebar -->
+        <nav class="sidebar" id="analyst-sidebar">
+            <div class="sidebar-brand grad-text"><i class="fa-solid fa-shield-halved" style="margin-right:8px"></i>COPILOT</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+                <button class="nav-btn active" onclick="aTab('a-dash',this)"><i class="fa-solid fa-gauge-high"></i> Live Dashboard</button>
+                <button class="nav-btn" onclick="aTab('a-fed',this)"><i class="fa-solid fa-diagram-project"></i> Federated Learning</button>
+                <button class="nav-btn" onclick="aTab('a-gnn',this)"><i class="fa-solid fa-circle-nodes"></i> GNN Network</button>
+                <button class="nav-btn" onclick="aTab('a-hist',this)"><i class="fa-solid fa-clock-rotate-left"></i> Audit History</button>
+                <button class="nav-btn" onclick="aTab('a-plans',this)"><i class="fa-solid fa-credit-card"></i> Plans & Billing</button>
+                <button class="nav-btn" onclick="aTab('a-help',this)"><i class="fa-solid fa-circle-question"></i> Help & Support</button>
+            </div>
+            <div class="sidebar-status" style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);color:var(--purple);">
+                <span class="s-dot" style="background:var(--green);"></span> FHE VAULT — CKKS
+            </div>
+            <div class="sidebar-status" id="analyst-fb-status" style="background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.1);color:var(--cyan);">
+                <span class="conn-dot ok" id="a-conn-dot"></span> <span id="a-conn-text">Firebase: Connected</span>
+            </div>
+            <button class="disconnect-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
+            <div style="padding:0.3rem 1rem;font-size:0.55rem;color:rgba(255,255,255,0.1);text-align:center;">v7.0 — IEEE FraudGNN-RL</div>
+        </nav>
+
+        <main style="flex:1;overflow-y:auto;padding:2rem;" id="analyst-main">
+            <!-- ====== ANALYST DASHBOARD ====== -->
+            <div id="a-dash" class="tab-content active">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                    <div>
+                        <h2 style="font-size:1.8rem;font-weight:800;">Threat Assessment Hub</h2>
+                        <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:0.2rem;">GNN + Reinforcement Learning anomaly detection</p>
+                    </div>
+                    <div style="display:flex;gap:0.6rem;align-items:center;">
+                        <span class="tag xai"><i class="fa-solid fa-brain"></i> XAI</span>
+                        <span class="tag fhe"><i class="fa-solid fa-lock"></i> FHE</span>
+                        <span class="tag eu"><i class="fa-solid fa-scale-balanced"></i> EU AI ACT</span>
+                        <input type="file" id="json-upload" accept=".json" style="display:none" onchange="processUpload(event)">
+                        <label for="json-upload" style="cursor:pointer;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;padding:0.6rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.8rem;display:inline-flex;align-items:center;gap:0.4rem;transition:all 0.3s;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> INGEST DATA
+                        </label>
+                    </div>
+                </div>
+                <!-- KPIs -->
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+                    <div class="glass kpi c"><div class="kpi-label">Total Scanned</div><div class="kpi-val" style="color:var(--cyan)" id="kpi-scan">0</div><div class="kpi-sub">transactions</div></div>
+                    <div class="glass kpi k"><div class="kpi-label">Anomalies</div><div class="kpi-val" style="color:var(--pink)" id="kpi-anom">0</div><div class="kpi-sub">flagged</div></div>
+                    <div class="glass kpi p"><div class="kpi-label">AI Accuracy</div><div class="kpi-val" style="color:var(--purple)" id="kpi-acc">97.3</div><div class="kpi-sub">F1-score</div></div>
+                    <div class="glass kpi g"><div class="kpi-label">FL Rounds</div><div class="kpi-val" style="color:var(--green)" id="kpi-fl">847</div><div class="kpi-sub">federated</div></div>
+                </div>
+                <!-- Seaborn + XAI -->
+                <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                    <div class="glass" style="padding:1.2rem;border-radius:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+                            <h3 class="mono" style="font-size:0.8rem;color:var(--cyan);">Anomaly Cluster Visualization</h3>
+                            <span class="tag gnn"><i class="fa-solid fa-chart-scatter"></i> SEABORN</span>
+                        </div>
+                        <div id="seaborn-ph" style="height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px dashed rgba(0,240,255,0.15);border-radius:12px;">
+                            <i class="fa-solid fa-chart-scatter" style="font-size:2rem;color:rgba(168,85,247,0.3);margin-bottom:0.5rem;"></i>
+                            <p style="font-size:0.75rem;color:rgba(255,255,255,0.25);">Awaiting Matplotlib/Seaborn payload...</p>
+                        </div>
+                        <img id="seaborn-plot" style="display:none;height:220px;width:100%;object-fit:contain;border-radius:12px;" />
+                    </div>
+                    <div class="glass" style="padding:1.2rem;border-radius:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                            <h3 class="mono" style="font-size:0.8rem;color:var(--purple);">XAI Feature Attribution</h3>
+                            <span class="tag xai">SHAP</span>
+                        </div>
+                        <p style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-bottom:1rem;">Shapley values — global model importance</p>
+                        <div>
+                            <div class="xai-bar-wrap"><span class="xai-label">Z-Score Deviation</span><div class="xai-bar-bg"><div class="xai-bar" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--purple))" data-w="85%"></div></div><span class="xai-val">0.85</span></div>
+                            <div class="xai-bar-wrap"><span class="xai-label">Split Invoice</span><div class="xai-bar-bg"><div class="xai-bar" style="width:0%;background:linear-gradient(90deg,var(--pink),var(--red))" data-w="72%"></div></div><span class="xai-val">0.72</span></div>
+                            <div class="xai-bar-wrap"><span class="xai-label">Missing Receipt</span><div class="xai-bar-bg"><div class="xai-bar" style="width:0%;background:linear-gradient(90deg,var(--amber),var(--red))" data-w="64%"></div></div><span class="xai-val">0.64</span></div>
+                            <div class="xai-bar-wrap"><span class="xai-label">Network Centrality</span><div class="xai-bar-bg"><div class="xai-bar" style="width:0%;background:linear-gradient(90deg,var(--green),var(--cyan))" data-w="58%"></div></div><span class="xai-val">0.58</span></div>
+                            <div class="xai-bar-wrap"><span class="xai-label">Temporal Anomaly</span><div class="xai-bar-bg"><div class="xai-bar" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--pink))" data-w="45%"></div></div><span class="xai-val">0.45</span></div>
+                            <div class="xai-bar-wrap"><span class="xai-label">Vendor Risk</span><div class="xai-bar-bg"><div class="xai-bar" style="width:0%;background:linear-gradient(90deg,var(--amber),var(--purple))" data-w="39%"></div></div><span class="xai-val">0.39</span></div>
+                        </div>
+                        <div style="margin-top:1rem;padding:0.5rem;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:8px;">
+                            <p style="font-size:0.6rem;color:var(--green);"><i class="fa-solid fa-scale-balanced" style="margin-right:4px"></i> EU AI Act — All decisions traceable via SHAP/LIME</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Threat Table -->
+                <div class="glass" style="border-radius:16px;overflow:hidden;">
+                    <div style="padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <h3 style="font-size:0.9rem;font-weight:700;">Flagged Transactions</h3>
+                        <span class="tag fhe"><i class="fa-solid fa-lock"></i> ENCRYPTED</span>
+                    </div>
+                    <table class="dtable"><thead><tr><th>TXN ID</th><th>Vendor</th><th>Amount</th><th>AI Confidence</th><th>XAI Reason</th><th>Action</th></tr></thead>
+                    <tbody id="table-body"><tr><td colspan="6" style="padding:3rem;text-align:center;color:rgba(255,255,255,0.2);"><i class="fa-solid fa-cloud-arrow-up" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;color:rgba(0,240,255,0.15)"></i>Upload JSON to run GNN + OCR analysis</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- ====== FEDERATED LEARNING TAB ====== -->
+            <div id="a-fed" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:0.3rem;">Federated Learning Command Center</h2>
+                <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:1.5rem;">IEEE FinGraphFL — Privacy-preserving collaborative AI</p>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+                    <div class="glass kpi c"><div class="kpi-label">Active Nodes</div><div class="kpi-val" style="color:var(--cyan)">5</div><div class="kpi-sub">banks</div></div>
+                    <div class="glass kpi g"><div class="kpi-label">Privacy Budget</div><div class="kpi-val" style="color:var(--green)">ε=0.5</div><div class="kpi-sub">Rényi DP</div></div>
+                    <div class="glass kpi p"><div class="kpi-label">Global F1</div><div class="kpi-val" style="color:var(--purple)">97.3%</div><div class="kpi-sub">post-aggregation</div></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div class="glass" style="padding:1.5rem;border-radius:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+                            <h3 style="font-size:0.9rem;font-weight:700;">Global Node Sync</h3>
+                            <span class="tag eu"><i class="fa-solid fa-rotate"></i> ROUND #847</span>
+                        </div>
+                        <div class="fl-node"><div class="fl-dot synced"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:0.8rem;font-weight:600;">🇺🇸 New York — JPMorgan</span><span class="mono" style="font-size:0.65rem;color:var(--green)">SYNCED</span></div><div class="fl-bar-bg" style="margin-top:6px"><div class="fl-bar" style="width:100%;background:var(--green)"></div></div></div></div>
+                        <div class="fl-node"><div class="fl-dot synced"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:0.8rem;font-weight:600;">🇬🇧 London — HSBC</span><span class="mono" style="font-size:0.65rem;color:var(--green)">SYNCED</span></div><div class="fl-bar-bg" style="margin-top:6px"><div class="fl-bar" style="width:100%;background:var(--green)"></div></div></div></div>
+                        <div class="fl-node"><div class="fl-dot syncing"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:0.8rem;font-weight:600;">🇯🇵 Tokyo — Mitsubishi</span><span class="mono" style="font-size:0.65rem;color:var(--cyan)">SYNCING 78%</span></div><div class="fl-bar-bg" style="margin-top:6px"><div class="fl-bar" style="width:78%;background:var(--cyan)"></div></div></div></div>
+                        <div class="fl-node"><div class="fl-dot syncing"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:0.8rem;font-weight:600;">🇸🇬 Singapore — DBS</span><span class="mono" style="font-size:0.65rem;color:var(--cyan)">SYNCING 52%</span></div><div class="fl-bar-bg" style="margin-top:6px"><div class="fl-bar" style="width:52%;background:var(--cyan)"></div></div></div></div>
+                        <div class="fl-node"><div class="fl-dot pending"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:0.8rem;font-weight:600;">🇩🇪 Frankfurt — Deutsche Bank</span><span class="mono" style="font-size:0.65rem;color:var(--amber)">PENDING</span></div><div class="fl-bar-bg" style="margin-top:6px"><div class="fl-bar" style="width:15%;background:var(--amber)"></div></div></div></div>
+                    </div>
+                    <div class="glass" style="padding:1.5rem;border-radius:16px;">
+                        <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:1rem;">Secure Aggregation Protocol</h3>
+                        <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:1.2rem;border:1px solid rgba(255,255,255,0.04);text-align:center;">
+                            <span style="font-size:0.7rem;color:var(--cyan);font-weight:700;letter-spacing:0.1em;">FedAvg + DIFFERENTIAL PRIVACY</span>
+                            <div style="display:flex;justify-content:center;gap:1rem;margin:1rem 0;">
+                                <div style="width:45px;height:45px;border-radius:50%;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--cyan);animation:pulse 2s infinite;">N1</div>
+                                <div style="width:45px;height:45px;border-radius:50%;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--green);animation:pulse 2s 0.3s infinite;">N2</div>
+                                <div style="width:45px;height:45px;border-radius:50%;border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--purple);animation:pulse 2s 0.6s infinite;">N3</div>
+                                <div style="width:45px;height:45px;border-radius:50%;border:2px solid var(--pink);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--pink);animation:pulse 2s 0.9s infinite;">N4</div>
+                                <div style="width:45px;height:45px;border-radius:50%;border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--amber);animation:pulse 2s 1.2s infinite;">N5</div>
+                            </div>
+                            <i class="fa-solid fa-arrows-down-to-line" style="font-size:1rem;color:rgba(255,255,255,0.15);"></i>
+                            <div style="width:70px;height:70px;margin:0.8rem auto 0;border-radius:50%;background:linear-gradient(135deg,rgba(0,240,255,0.12),rgba(168,85,247,0.12));border:2px solid rgba(0,240,255,0.3);display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                                <i class="fa-solid fa-server" style="font-size:1rem;color:var(--cyan);"></i>
+                                <span style="font-size:0.45rem;color:rgba(255,255,255,0.4);margin-top:2px;">AGGREGATOR</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                            <div style="padding:0.5rem;background:rgba(0,240,255,0.05);border-radius:8px;border:1px solid rgba(0,240,255,0.1);"><span style="font-size:0.55rem;color:rgba(255,255,255,0.3);">Encryption</span><p class="mono" style="font-size:0.7rem;color:var(--cyan);font-weight:600;">CKKS Lattice</p></div>
+                            <div style="padding:0.5rem;background:rgba(168,85,247,0.05);border-radius:8px;border:1px solid rgba(168,85,247,0.1);"><span style="font-size:0.55rem;color:rgba(255,255,255,0.3);">Method</span><p class="mono" style="font-size:0.7rem;color:var(--purple);font-weight:600;">Secure FedAvg</p></div>
+                            <div style="padding:0.5rem;background:rgba(34,197,94,0.05);border-radius:8px;border:1px solid rgba(34,197,94,0.1);"><span style="font-size:0.55rem;color:rgba(255,255,255,0.3);">Privacy</span><p class="mono" style="font-size:0.7rem;color:var(--green);font-weight:600;">Rényi DP ε=0.5</p></div>
+                            <div style="padding:0.5rem;background:rgba(236,72,153,0.05);border-radius:8px;border:1px solid rgba(236,72,153,0.1);"><span style="font-size:0.55rem;color:rgba(255,255,255,0.3);">Model</span><p class="mono" style="font-size:0.7rem;color:var(--pink);font-weight:600;">FraudGNN-RL</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== GNN TAB ====== -->
+            <div id="a-gnn" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:0.3rem;">Transaction Network Graph</h2>
+                <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:1.5rem;">TSSGC — Temporal-Spatial-Semantic Graph Convolution</p>
+                <div class="glass" style="padding:1.2rem;border-radius:16px;margin-bottom:1rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+                        <div style="display:flex;gap:0.6rem;"><span class="tag gnn"><i class="fa-solid fa-circle-nodes"></i> GNN</span><span class="tag fhe"><i class="fa-solid fa-lock"></i> ENC</span></div>
+                        <div style="display:flex;gap:1rem;font-size:0.6rem;color:rgba(255,255,255,0.35);">
+                            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan);margin-right:3px;vertical-align:middle;"></span>Employee</span>
+                            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--purple);margin-right:3px;vertical-align:middle;"></span>Vendor</span>
+                            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:3px;vertical-align:middle;"></span>Flagged</span>
+                        </div>
+                    </div>
+                    <canvas id="gnn-canvas" width="900" height="400" style="width:100%;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.04);"></canvas>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
+                    <div class="glass" style="padding:1rem;border-radius:12px;text-align:center;"><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;">Nodes</div><div class="mono" style="font-size:1.4rem;color:var(--cyan);font-weight:700;margin-top:0.3rem;">4,201</div></div>
+                    <div class="glass" style="padding:1rem;border-radius:12px;text-align:center;"><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;">Edges</div><div class="mono" style="font-size:1.4rem;color:var(--purple);font-weight:700;margin-top:0.3rem;">12,847</div></div>
+                    <div class="glass" style="padding:1rem;border-radius:12px;text-align:center;"><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;">Fraud Rings</div><div class="mono" style="font-size:1.4rem;color:var(--red);font-weight:700;margin-top:0.3rem;">3</div></div>
+                    <div class="glass" style="padding:1rem;border-radius:12px;text-align:center;"><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;">Density</div><div class="mono" style="font-size:1.4rem;color:var(--green);font-weight:700;margin-top:0.3rem;">0.073</div></div>
+                </div>
+            </div>
+
+            <!-- ====== HISTORY TAB ====== -->
+            <div id="a-hist" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:1.5rem;">Audit Session History</h2>
+                <div class="glass" style="padding:1.5rem;border-radius:16px;">
+                    <table class="dtable"><thead><tr><th>Date</th><th>Rows Scanned</th><th>Anomalies</th><th>FL Round</th><th>Status</th></tr></thead>
+                    <tbody id="history-body">
+                        <tr><td style="padding:1rem">Oct 12, 2026</td><td>10,000</td><td style="color:var(--red);font-weight:700;">4</td><td class="mono" style="color:var(--cyan)">#845</td><td><span class="tag eu">Resolved</span></td></tr>
+                        <tr><td style="padding:1rem">Oct 05, 2026</td><td>8,450</td><td style="color:var(--red);font-weight:700;">1</td><td class="mono" style="color:var(--cyan)">#839</td><td><span class="tag eu">Resolved</span></td></tr>
+                        <tr><td style="padding:1rem">Sep 28, 2026</td><td>12,200</td><td style="color:var(--red);font-weight:700;">7</td><td class="mono" style="color:var(--cyan)">#831</td><td><span class="tag eu">Resolved</span></td></tr>
+                        <tr><td style="padding:1rem">Sep 20, 2026</td><td>9,100</td><td style="color:var(--amber);font-weight:700;">2</td><td class="mono" style="color:var(--cyan)">#824</td><td><span class="tag warn">Under Review</span></td></tr>
+                    </tbody></table>
+                </div>
+            </div>
+
+            <!-- ====== PLANS TAB ====== -->
+            <div id="a-plans" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:1.5rem;">Subscription & Billing</h2>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+                    <div class="glass" style="padding:1.8rem;border-radius:16px;">
+                        <h3 style="font-size:1rem;font-weight:700;color:rgba(255,255,255,0.6);margin-bottom:0.5rem;">Analyst Tier</h3>
+                        <p style="font-size:2rem;font-weight:800;">$800 <span style="font-size:0.75rem;color:rgba(255,255,255,0.3)">/mo</span></p>
+                        <ul style="margin-top:1.2rem;font-size:0.8rem;color:rgba(255,255,255,0.5);list-style:none;display:flex;flex-direction:column;gap:0.5rem;"><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>5,000 txns/month</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>Basic GNN Scan</li><li><i class="fa-solid fa-xmark" style="color:rgba(255,255,255,0.15);margin-right:8px"></i>No FL</li><li><i class="fa-solid fa-xmark" style="color:rgba(255,255,255,0.15);margin-right:8px"></i>No FHE</li></ul>
+                        <button onclick="payWithRazorpay(800, 'Analyst Tier')" style="margin-top:1.5rem;width:100%;padding:0.7rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.4);font-weight:600;cursor:pointer;"><i class="fa-solid fa-credit-card"></i> Subscribe</button>
+                    </div>
+                    <div class="glass" style="padding:1.8rem;border-radius:16px;border-color:rgba(0,240,255,0.3);position:relative;overflow:hidden;">
+                        <div style="position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;font-size:0.6rem;font-weight:700;padding:0.3rem 1rem;border-radius:0 0 0 12px;letter-spacing:0.1em;">CURRENT</div>
+                        <h3 style="font-size:1rem;font-weight:700;color:var(--cyan);margin-bottom:0.5rem;">Enterprise SOC</h3>
+                        <p style="font-size:2rem;font-weight:800;">$4,500 <span style="font-size:0.75rem;color:rgba(255,255,255,0.3)">/mo</span></p>
+                        <ul style="margin-top:1.2rem;font-size:0.8rem;color:rgba(255,255,255,0.7);list-style:none;display:flex;flex-direction:column;gap:0.5rem;"><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>Unlimited GNN</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>OCR Verification</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>Firebase Sync</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>FL (5 Nodes)</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>FHE Processing</li></ul>
+                        <button onclick="payWithRazorpay(4500, 'Enterprise SOC')" style="margin-top:1.5rem;width:100%;padding:0.7rem;border-radius:10px;border:none;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;font-weight:700;cursor:pointer;"><i class="fa-solid fa-credit-card"></i> Upgrade Now</button>
+                    </div>
+                    <div class="glass" style="padding:1.8rem;border-radius:16px;border-color:rgba(168,85,247,0.2);">
+                        <h3 style="font-size:1rem;font-weight:700;color:var(--purple);margin-bottom:0.5rem;">Quantum Shield</h3>
+                        <p style="font-size:2rem;font-weight:800;">$12,000 <span style="font-size:0.75rem;color:rgba(255,255,255,0.3)">/mo</span></p>
+                        <ul style="margin-top:1.2rem;font-size:0.8rem;color:rgba(255,255,255,0.5);list-style:none;display:flex;flex-direction:column;gap:0.5rem;"><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>Everything in Enterprise</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>Quantum Graph Learning</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>GAN Adversarial Sims</li><li><i class="fa-solid fa-check" style="color:var(--green);margin-right:8px"></i>Unlimited FL Nodes</li></ul>
+                        <button onclick="payWithRazorpay(12000, 'Quantum Shield')" style="margin-top:1.5rem;width:100%;padding:0.7rem;border-radius:10px;border:1px solid rgba(168,85,247,0.3);background:transparent;color:var(--purple);font-weight:600;cursor:pointer;"><i class="fa-solid fa-credit-card"></i> Buy Quantum</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== HELP TAB ====== -->
+            <div id="a-help" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:1.5rem;">Support & Documentation</h2>
+                <div class="glass" style="padding:1.5rem;border-radius:16px;display:flex;flex-direction:column;gap:0.8rem;">
+                    <details style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);"><summary style="font-weight:700;color:var(--cyan);display:flex;align-items:center;gap:0.5rem;"><span class="chev">▸</span> How does OCR Verification work?</summary><p style="margin-top:0.8rem;font-size:0.8rem;color:rgba(255,255,255,0.5);line-height:1.6;">Cross-references ledger amounts against scanned PDF receipts using Vision Transformers (ViT) for pixel-level manipulation detection.</p></details>
+                    <details style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);"><summary style="font-weight:700;color:var(--purple);display:flex;align-items:center;gap:0.5rem;"><span class="chev">▸</span> What are Graph Neural Networks (GNNs)?</summary><p style="margin-top:0.8rem;font-size:0.8rem;color:rgba(255,255,255,0.5);line-height:1.6;">FraudGNN-RL analyzes entire payment networks as graphs. If Employee A → Vendor B → Employee C, the GNN flags the shell-company ring. RL dynamically adjusts thresholds.</p></details>
+                    <details style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);"><summary style="font-weight:700;color:var(--green);display:flex;align-items:center;gap:0.5rem;"><span class="chev">▸</span> How does Federated Learning protect data?</summary><p style="margin-top:0.8rem;font-size:0.8rem;color:rgba(255,255,255,0.5);line-height:1.6;">FinGraphFL trains models across bank nodes without sharing raw data. Only encrypted gradients are exchanged via Secure FedAvg with Rényi DP (ε=0.5).</p></details>
+                    <details style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);"><summary style="font-weight:700;color:var(--pink);display:flex;align-items:center;gap:0.5rem;"><span class="chev">▸</span> What is Fully Homomorphic Encryption?</summary><p style="margin-top:0.8rem;font-size:0.8rem;color:rgba(255,255,255,0.5);line-height:1.6;">FHE (CKKS lattice) allows AI to compute on encrypted data. Your ledger is never decrypted during analysis — the gold standard of Data-in-Use protection.</p></details>
+                    <details style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);"><summary style="font-weight:700;color:var(--amber);display:flex;align-items:center;gap:0.5rem;"><span class="chev">▸</span> XAI Audit Trail & EU AI Act compliance?</summary><p style="margin-top:0.8rem;font-size:0.8rem;color:rgba(255,255,255,0.5);line-height:1.6;">SHAP/LIME feature attributions on every flagged transaction. Satisfies EU AI Act 2025 & GDPR Article 22 right to explanation. Full audit-by-design architecture.</p></details>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- ============================================================
+     PHASE 3B: ADMIN COMMAND CENTER
+     ============================================================ -->
+<div id="admin-app">
+    <canvas id="admin-bg-canvas"></canvas>
+    <!-- Admin Ticker -->
+    <div class="ticker-wrap" style="border-bottom-color:rgba(168,85,247,0.3);">
+        <div class="ticker" style="color:var(--purple);">
+            <span style="color:var(--red)"><i class="fa-solid fa-user-shield"></i> ADMIN:</span> Global Administrator Console Active &nbsp;|&nbsp;
+            <span style="color:var(--purple)"><i class="fa-solid fa-database"></i> FIRESTORE:</span> Real-time sync — 0ms latency &nbsp;|&nbsp;
+            <span style="color:var(--green)"><i class="fa-solid fa-users-gear"></i> IAM:</span> 5 active analyst sessions &nbsp;|&nbsp;
+            <span style="color:var(--cyan)"><i class="fa-solid fa-chart-line"></i> METRICS:</span> $2.4M fraud prevented YTD &nbsp;|&nbsp;
+            <span style="color:var(--amber)"><i class="fa-solid fa-key"></i> RBAC:</span> Zero Trust role enforcement active
+        </div>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden;position:relative;z-index:10;">
+        <!-- Admin Sidebar -->
+        <nav class="sidebar" style="border-right-color:rgba(168,85,247,0.1);">
+            <div class="sidebar-brand grad-text-admin"><i class="fa-solid fa-terminal" style="margin-right:8px"></i>ADMIN</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+                <button class="nav-btn active-admin" onclick="admTab('ad-users',this)"><i class="fa-solid fa-users-gear"></i> User Database</button>
+                <button class="nav-btn" onclick="admTab('ad-report',this)"><i class="fa-solid fa-chart-pie"></i> Annual Report</button>
+                <button class="nav-btn" onclick="admTab('ad-feedback',this)"><i class="fa-solid fa-star"></i> Analyst Feedback</button>
+                <button class="nav-btn" onclick="admTab('ad-logs',this)"><i class="fa-solid fa-terminal"></i> System Logs</button>
+            </div>
+            <div class="sidebar-status" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);color:var(--red);">
+                <span class="s-dot" style="background:var(--red);"></span> ADMIN PRIVILEGES
+            </div>
+            <div class="sidebar-status" id="admin-fb-status" style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.1);color:var(--purple);">
+                <span class="conn-dot ok" id="ad-conn-dot"></span> <span id="ad-conn-text">Firebase: Connected</span>
+            </div>
+            <button class="disconnect-btn" onclick="logout()"><i class="fa-solid fa-power-off"></i> Disconnect Node</button>
+            <div style="padding:0.3rem 1rem;font-size:0.55rem;color:rgba(255,255,255,0.1);text-align:center;">v7.0 — Admin Console</div>
+        </nav>
+
+        <main style="flex:1;overflow-y:auto;padding:2rem;">
+            <!-- ====== USER DATABASE TAB ====== -->
+            <div id="ad-users" class="tab-content active">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                    <div><h2 style="font-size:1.8rem;font-weight:800;">User Access Database</h2><p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:0.2rem;">Identity & Access Management — Firebase Firestore CRUD</p></div>
+                    <span class="tag danger"><i class="fa-solid fa-shield-halved"></i> RBAC ENFORCED</span>
+                </div>
+                <!-- Add User Form -->
+                <div class="glass" style="padding:1.5rem;border-radius:16px;margin-bottom:1.5rem;border-color:rgba(168,85,247,0.2);">
+                    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:1rem;color:var(--purple);"><i class="fa-solid fa-user-plus" style="margin-right:6px"></i> Register New User</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:0.8rem;align-items:end;">
+                        <div><label style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:0.3rem;">Full Name</label><input class="admin-input" id="new-name" placeholder="John Doe"></div>
+                        <div><label style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:0.3rem;">Email</label><input class="admin-input" id="new-email" placeholder="john@kpmg.com"></div>
+                        <div><label style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:0.3rem;">Role</label><select class="admin-select" id="new-role"><option value="Analyst">Field Analyst</option><option value="Senior Analyst">Senior Analyst</option><option value="Manager">Audit Manager</option><option value="Admin">Administrator</option></select></div>
+                        <div><label style="font-size:0.6rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:0.3rem;">Department</label><select class="admin-select" id="new-dept"><option>Internal Audit</option><option>Compliance</option><option>Risk Management</option><option>Finance</option><option>IT Security</option></select></div>
+                        <button onclick="registerUser()" style="padding:0.7rem 1.5rem;border-radius:10px;border:none;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.3s;white-space:nowrap;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'"><i class="fa-solid fa-plus"></i> Register</button>
+                    </div>
+                </div>
+                <!-- User Table -->
+                <div class="glass" style="border-radius:16px;overflow:hidden;">
+                    <div style="padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <h3 style="font-size:0.9rem;font-weight:700;">Active Directory</h3>
+                        <span class="mono" style="font-size:0.65rem;color:rgba(255,255,255,0.3);" id="user-count">0 users</span>
+                    </div>
+                    <table class="dtable"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Status</th><th>Registered</th><th>Action</th></tr></thead>
+                    <tbody id="users-table-body"><tr><td colspan="7" style="padding:2rem;text-align:center;color:rgba(255,255,255,0.2);font-size:0.85rem;">Loading from Firebase...</td></tr></tbody></table>
+                </div>
+            </div>
+
+            <!-- ====== ANNUAL REPORT TAB ====== -->
+            <div id="ad-report" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:0.3rem;">Annual Report & Analytics</h2>
+                <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:1.5rem;">System-wide fraud prevention metrics — FY 2026</p>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+                    <div class="glass kpi c"><div class="kpi-label">Total Audits</div><div class="kpi-val" style="color:var(--cyan)">156</div><div class="kpi-sub">this year</div></div>
+                    <div class="glass kpi r"><div class="kpi-label">Anomalies Prevented</div><div class="kpi-val" style="color:var(--red)">1,247</div><div class="kpi-sub">blocked</div></div>
+                    <div class="glass kpi g"><div class="kpi-label">Revenue Protected</div><div class="kpi-val" style="color:var(--green)">$2.4M</div><div class="kpi-sub">saved</div></div>
+                    <div class="glass kpi p"><div class="kpi-label">System Uptime</div><div class="kpi-val" style="color:var(--purple)">99.97%</div><div class="kpi-sub">availability</div></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div class="glass" style="padding:1.5rem;border-radius:16px;">
+                        <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:1rem;">Fraud Category Breakdown</h3>
+                        <div class="chart-box" style="height:280px;"><canvas id="fraud-donut"></canvas></div>
+                    </div>
+                    <div class="glass" style="padding:1.5rem;border-radius:16px;">
+                        <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:1rem;">Monthly Anomaly Trend</h3>
+                        <div class="chart-box" style="height:280px;"><canvas id="anomaly-line"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== ANALYST FEEDBACK TAB ====== -->
+            <div id="ad-feedback" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:0.3rem;">Analyst Satisfaction & Feedback</h2>
+                <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:1.5rem;">Internal survey and tool adoption metrics</p>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+                    <div class="glass kpi a"><div class="kpi-label">Avg Rating</div><div class="kpi-val" style="color:var(--amber)">4.7<span style="font-size:0.8rem">/5</span></div><div class="kpi-sub"><span class="stars">★★★★★</span></div></div>
+                    <div class="glass kpi g"><div class="kpi-label">Total Reviews</div><div class="kpi-val" style="color:var(--green)">89</div><div class="kpi-sub">analyst submissions</div></div>
+                    <div class="glass kpi c"><div class="kpi-label">Avg Response Time</div><div class="kpi-val" style="color:var(--cyan)">2.1s</div><div class="kpi-sub">AI processing</div></div>
+                </div>
+                <div class="glass" style="padding:1.5rem;border-radius:16px;">
+                    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:1.2rem;">Recent Feedback</h3>
+                    <div style="display:flex;flex-direction:column;gap:0.8rem;" id="feedback-list">
+                        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><span style="font-weight:600;font-size:0.85rem;">Sarah Chen — Senior Analyst</span><span class="stars">★★★★★</span></div>
+                            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);">"The XAI radar chart makes it incredibly easy to explain AI decisions to audit committees. Game changer for compliance."</p>
+                            <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);margin-top:0.5rem;display:block;">Oct 15, 2026</span>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><span style="font-weight:600;font-size:0.85rem;">Marcus Webb — Audit Manager</span><span class="stars">★★★★<span style="opacity:0.2">★</span></span></div>
+                            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);">"Federated Learning sync across our bank nodes is seamless. Would love to see faster aggregation rounds in future updates."</p>
+                            <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);margin-top:0.5rem;display:block;">Oct 10, 2026</span>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><span style="font-weight:600;font-size:0.85rem;">Priya Sharma — Field Analyst</span><span class="stars">★★★★★</span></div>
+                            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);">"Caught a $45K split invoice scheme that our manual audit missed for 3 months. The GNN network view is phenomenal."</p>
+                            <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);margin-top:0.5rem;display:block;">Oct 5, 2026</span>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.04);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><span style="font-weight:600;font-size:0.85rem;">James O'Brien — Compliance Officer</span><span class="stars">★★★★★</span></div>
+                            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);">"EU AI Act compliance was our biggest concern. The SHAP audit trail feature eliminated months of documentation work."</p>
+                            <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);margin-top:0.5rem;display:block;">Sep 28, 2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== SYSTEM LOGS TAB ====== -->
+            <div id="ad-logs" class="tab-content">
+                <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:0.3rem;">System Event Logs</h2>
+                <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:1.5rem;">Real-time infrastructure monitoring</p>
+                <div class="glass" style="border-radius:16px;overflow:hidden;">
+                    <table class="dtable"><thead><tr><th>Timestamp</th><th>Event</th><th>Severity</th><th>Source</th></tr></thead>
+                    <tbody id="logs-body">
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:32:01</td><td>Federated round #847 aggregation complete</td><td><span class="tag eu">INFO</span></td><td>FL Engine</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:30:45</td><td>User admin@kpmg.com authenticated via RBAC</td><td><span class="tag eu">INFO</span></td><td>Auth Service</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:28:12</td><td>FHE vault encryption key rotated (CKKS)</td><td><span class="tag warn">WARNING</span></td><td>Crypto Engine</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:25:00</td><td>GNN detected potential fraud ring (3 entities)</td><td><span class="tag danger">CRITICAL</span></td><td>GNN Engine</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:20:33</td><td>Firestore write: audit_history document added</td><td><span class="tag eu">INFO</span></td><td>Database</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:15:00</td><td>XAI engine generated 12 SHAP explanations</td><td><span class="tag eu">INFO</span></td><td>XAI Engine</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:10:22</td><td>OCR Vision Transformer processed 47 receipts</td><td><span class="tag eu">INFO</span></td><td>OCR Service</td></tr>
+                        <tr><td class="mono" style="font-size:0.75rem;color:var(--cyan)">2026-10-15 14:05:01</td><td>Tokyo node sync stalled — retrying connection</td><td><span class="tag warn">WARNING</span></td><td>FL Engine</td></tr>
+                    </tbody></table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- ============================================================
+     ALL SCRIPTS
+     ============================================================ -->
+<script type="module">
+    // ==========================================
+    // FIREBASE
+    // ==========================================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot, query, orderBy, limit, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAAJ91jBX9LNXSAEEBOxavFw4YHxNTgpwY",
+        authDomain: "ledger-ai-1235a.firebaseapp.com",
+        databaseURL: "https://ledger-ai-1235a-default-rtdb.firebaseio.com",
+        projectId: "ledger-ai-1235a",
+        storageBucket: "ledger-ai-1235a.firebasestorage.app",
+        messagingSenderId: "187031514932",
+        appId: "1:187031514932:web:13b5ae6c3ae12632efff61",
+        measurementId: "G-1DWSKZS2TN"
+    };
+
+    let db;
+    let auth;
+    let fbConnected = false;
+    try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        fbConnected = true;
+        console.log("🔥 Firebase Firestore Connected!");
+        updateConnUI(true);
+    } catch(e) {
+        console.error("Firebase init failed:", e);
+        updateConnUI(false);
+    }
+
+    function updateConnUI(ok) {
+        const dots = document.querySelectorAll('#login-conn-dot, #a-conn-dot, #ad-conn-dot');
+        const txts = [document.getElementById('login-conn-text'), document.getElementById('a-conn-text'), document.getElementById('ad-conn-text')];
+        dots.forEach(d => { if(d) { d.className = ok ? 'conn-dot ok' : 'conn-dot fail'; }});
+        txts.forEach(t => { if(t) t.textContent = ok ? 'Firebase: Connected' : 'Firebase: Offline'; });
+    }
+
+    // ==========================================
+    // ANALYST TAB SWITCHING
+    // ==========================================
+    window.aTab = function(id, btn) {
+        document.querySelectorAll('#analyst-main .tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('#analyst-sidebar .nav-btn').forEach(b => { b.classList.remove('active'); });
+        if(btn) btn.classList.add('active');
+        if(id === 'a-dash') animXAI();
+        if(id === 'a-gnn') drawGNN();
+    };
+
+    // ==========================================
+    // ADMIN TAB SWITCHING
+    // ==========================================
+    window.admTab = function(id, btn) {
+        document.querySelectorAll('#admin-app main .tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('#admin-app .nav-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('active-admin'); });
+        if(btn) btn.classList.add('active-admin');
+        if(id === 'ad-report') initCharts();
+    };
+
+    // ==========================================
+    // LOGIN HANDLER
+    // ==========================================
+    window.isSignUpMode = true;
+    window.toggleSignUp = function(e) {
+        e.preventDefault();
+        window.isSignUpMode = !window.isSignUpMode;
+        document.getElementById('toggle-signup').textContent = window.isSignUpMode ? 'Already have an account? Log In' : 'Don\'t have an account? Sign Up';
+        document.getElementById('login-btn-text').textContent = window.isSignUpMode ? 'REGISTER NOW' : (document.getElementById('role-select').value === 'admin' ? 'INITIALIZE' : 'AUTHENTICATE');
+    };
+
+    window.handleLogin = async function() {
+        const role = document.getElementById('role-select').value;
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-pass').value;
+        const btn = document.getElementById('login-btn');
+        const btnText = document.getElementById('login-btn-text');
+        
+        if(!email || !pass) {
+            alert('Error: Email and Encryption Passphrase are required.');
+            return;
+        }
+
+        btnText.textContent = window.isSignUpMode ? 'REGISTERING...' : (role === 'admin' ? 'INITIALIZING...' : 'AUTHENTICATING...');
+        btn.style.opacity = '0.6';
+
+        try {
+            if (window.isSignUpMode) {
+                await createUserWithEmailAndPassword(auth, email, pass);
+                // Fire and forget Firestore update
+                addDoc(collection(db, "users"), {
+                    name: email.split('@')[0],
+                    email: email,
+                    role: role === 'admin' ? 'Admin' : 'Field Analyst',
+                    department: role === 'admin' ? 'IT Security' : 'Internal Audit',
+                    status: 'Active',
+                    registered: new Date().toISOString(),
+                    last_login: new Date().toISOString()
+                }).catch(err => console.error(err));
+                addLog(`Registered new user: ${email}`, 'INFO', 'IAM Service');
+            } else {
+                await signInWithEmailAndPassword(auth, email, pass);
+                
+                // Fire and forget last login update
+                (async () => {
+                    try {
+                        const q = query(collection(db, "users"), where("email", "==", email));
+                        const snap = await getDocs(q);
+                        if(!snap.empty) {
+                            const docId = snap.docs[0].id;
+                            await updateDoc(doc(db, "users", docId), { last_login: new Date().toISOString() });
+                        }
+                    } catch(err) { console.error(err); }
+                })();
+            }
+        } catch (e) {
+            alert("Authentication Failed: " + e.message);
+            btn.style.opacity = '1';
+            btnText.textContent = window.isSignUpMode ? 'REGISTER NOW' : (role === 'admin' ? 'INITIALIZE' : 'AUTHENTICATE');
+            return;
+        }
+
+        // Fast transition
+        document.getElementById('login-phase').style.transition = 'opacity 0.2s';
+        document.getElementById('login-phase').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('login-phase').style.display = 'none';
+            if(role === 'admin') {
+                document.getElementById('admin-app').style.display = 'flex';
+                initBG('admin-bg-canvas');
+                loadUsers();
+                addLog(`Admin ${email} via RBAC`, 'INFO', 'Auth Service');
+            } else {
+                document.getElementById('analyst-app').style.display = 'flex';
+                initBG('bg-canvas');
+                animVal('kpi-fl', 0, 847, 2000);
+                loadHistory();
+            }
+            setTimeout(animXAI, 150);
+        }, 200);
+    };
+
+    // ==========================================
+    // ROLE CHANGE HANDLER
+    // ==========================================
+    window.onRoleChange = function() {
+        const role = document.getElementById('role-select').value;
+        const icon = document.getElementById('login-icon');
+        const ring = document.getElementById('login-ring');
+        const btn = document.getElementById('login-btn');
+        const btnText = document.getElementById('login-btn-text');
+        if(role === 'admin') {
+            icon.className = 'fa-solid fa-user-shield fp-icon';
+            icon.style.color = 'var(--purple)';
+            ring.style.borderTopColor = 'var(--purple)';
+            btn.style.background = 'linear-gradient(135deg, var(--red), var(--purple))';
+            btnText.textContent = window.isSignUpMode ? 'REGISTER NOW' : 'INITIALIZE';
+        } else {
+            icon.className = 'fa-solid fa-fingerprint fp-icon';
+            icon.style.color = 'var(--cyan)';
+            ring.style.borderTopColor = 'var(--cyan)';
+            btn.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
+            btnText.textContent = window.isSignUpMode ? 'REGISTER NOW' : 'AUTHENTICATE';
+        }
+    };
+
+    window.onEmailInput = function() {
+        const email = document.getElementById('login-email').value.toLowerCase();
+        if(email.includes('admin')) {
+            document.getElementById('role-select').value = 'admin';
+            window.onRoleChange();
+        }
+    };
+
+    // ==========================================
+    // LOGOUT
+    // ==========================================
+    window.logout = function() {
+        const apps = ['analyst-app', 'admin-app'];
+        apps.forEach(id => {
+            const el = document.getElementById(id);
+            if(el.style.display === 'flex') {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.style.display = 'none';
+                    el.style.opacity = '1';
+                    // Reset login
+                    const lp = document.getElementById('login-phase');
+                    lp.style.display = 'flex';
+                    lp.style.opacity = '1';
+                    document.getElementById('login-btn').style.opacity = '1';
+                    document.getElementById('login-btn-text').textContent = document.getElementById('role-select').value === 'admin' ? 'INITIALIZE' : 'AUTHENTICATE';
+                }, 500);
+            }
+        });
+    };
+
+    // ==========================================
+    // FIREBASE CRUD — USER DATABASE
+    // ==========================================
+    window.registerUser = async function() {
+        const name = document.getElementById('new-name').value.trim();
+        const email = document.getElementById('new-email').value.trim();
+        const role = document.getElementById('new-role').value;
+        const dept = document.getElementById('new-dept').value;
+        if(!name || !email) { alert('Please fill Name and Email'); return; }
+        if(!db) { alert('Firebase not connected'); return; }
+        try {
+            await addDoc(collection(db, "users"), {
+                name, email, role, department: dept,
+                status: 'Active',
+                registered: new Date().toISOString()
+            });
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-email').value = '';
+            console.log("✅ User registered in Firestore");
+            addLog(`User ${email} registered`, 'INFO', 'IAM Service');
+        } catch(e) {
+            console.error("User registration failed:", e);
+            alert("Error: " + e.message);
+        }
+    };
+
+    window.revokeUser = async function(docId, btn) {
+        if(!db) return;
+        try {
+            await updateDoc(doc(db, "users", docId), { status: 'Suspended' });
+            btn.textContent = 'Revoked';
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            console.log("⛔ User access revoked");
+            addLog(`User ${docId} access revoked`, 'WARNING', 'IAM Service');
+        } catch(e) { console.error("Revoke failed:", e); }
+    };
+
+    // Real-time user listener
+    function loadUsers() {
+        if(!db) {
+            document.getElementById('users-table-body').innerHTML = '<tr><td colspan="7" style="padding:2rem;text-align:center;color:rgba(255,255,255,0.2);">Firebase not connected</td></tr>';
+            return;
+        }
+        const q = query(collection(db, "users"), orderBy("registered", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            let count = 0;
+            snapshot.forEach(docSnap => {
+                const u = docSnap.data();
+                count++;
+                const statusColor = u.status === 'Active' ? 'var(--green)' : u.status === 'Suspended' ? 'var(--red)' : 'var(--amber)';
+                const statusTag = u.status === 'Active' ? 'eu' : u.status === 'Suspended' ? 'danger' : 'warn';
+                const dateStr = u.registered ? new Date(u.registered).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'N/A';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;font-size:0.85rem;">${u.name || 'N/A'}</td>
+                    <td class="mono" style="font-size:0.75rem;color:var(--cyan)">${u.email || 'N/A'}</td>
+                    <td><span class="tag fhe" style="font-size:0.65rem;">${u.role || 'N/A'}</span></td>
+                    <td style="font-size:0.8rem;color:rgba(255,255,255,0.5)">${u.department || 'N/A'}</td>
+                    <td><span class="tag ${statusTag}" style="font-size:0.65rem;">${u.status || 'Unknown'}</span></td>
+                    <td style="font-size:0.75rem;color:rgba(255,255,255,0.35)">${dateStr}</td>
+                    <td>${u.status === 'Active' ? `<button class="btn-sm" style="background:rgba(239,68,68,0.12);color:var(--red);" onclick="revokeUser('${docSnap.id}',this)"><i class="fa-solid fa-ban"></i> Revoke</button>` : '<span style="font-size:0.7rem;color:rgba(255,255,255,0.2);">—</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('user-count').textContent = count + ' user' + (count !== 1 ? 's' : '');
+            if(count === 0) tbody.innerHTML = '<tr><td colspan="7" style="padding:2rem;text-align:center;color:rgba(255,255,255,0.2);">No users registered yet. Use the form above.</td></tr>';
+        }, (err) => {
+            console.error("Users listener error:", err);
+            document.getElementById('users-table-body').innerHTML = '<tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--red);font-size:0.85rem;">Error loading users: ' + err.message + '</td></tr>';
+        });
+    }
+
+    // Load Audit History from Firestore
+    function loadHistory() {
+        if(!db) return;
+        try {
+            const q = query(collection(db, "audit_history"), orderBy("date", "desc"), limit(20));
+            onSnapshot(q, (snap) => {
+                const hBody = document.getElementById('history-body');
+                if(!hBody) return;
+                
+                // Only overwrite if we actually have data from Firebase
+                if(!snap.empty) {
+                    hBody.innerHTML = '';
+                    snap.forEach(d => {
+                        const data = d.data();
+                        const dateStr = data.date ? new Date(data.date).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'N/A';
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td style="padding:1rem">${dateStr}</td><td>${data.rows||'N/A'}</td><td style="color:var(--red);font-weight:700">${data.anomalies||0}</td><td class="mono" style="color:var(--cyan)">#${data.fl_round||'—'}</td><td><span class="tag eu">Synced</span></td>`;
+                        hBody.appendChild(tr);
+                    });
+                }
+            }, (err) => {
+                console.error("History sync error:", err);
+            });
+        } catch(e) { console.log("History load error:", e.message); }
+    }
+
+    // Add log entry to System Logs UI
+    function addLog(event, severity, source) {
+        const tbody = document.getElementById('logs-body');
+        if(!tbody) return;
+        const tr = document.createElement('tr');
+        const now = new Date().toISOString().replace('T',' ').substring(0,19);
+        const tagClass = severity === 'CRITICAL' ? 'danger' : severity === 'WARNING' ? 'warn' : 'eu';
+        tr.innerHTML = `<td class="mono" style="font-size:0.75rem;color:var(--cyan)">${now}</td><td>${event}</td><td><span class="tag ${tagClass}">${severity}</span></td><td>${source}</td>`;
+        tbody.insertBefore(tr, tbody.firstChild);
+    }
+
+    // ==========================================
+    // DATA INGESTION (Analyst)
+    // ==========================================
+    window.processUpload = function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            const data = JSON.parse(evt.target.result);
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            data.forEach(txn => {
+                let conf = 60 + (txn.flag_potential_split?25:0) + (txn.flag_missing_documentation?10:0) + (txn.flag_statistical_outlier?20:0);
+                conf = Math.min(conf + Math.floor(Math.random()*5), 99);
+                let barCol = conf>85?'var(--red)':conf>70?'var(--pink)':'var(--amber)';
+                let reason = txn.flag_statistical_outlier?'Z-Score Deviation':txn.flag_potential_split?'Split Invoice':txn.flag_missing_documentation?'Missing Receipt':'Low Risk';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="mono" style="color:var(--cyan);font-size:0.8rem">${txn.transaction_id}</td><td>${txn.vendor_name}</td><td style="font-weight:700">$${Number(txn.amount).toLocaleString()}</td><td style="width:150px"><div style="display:flex;justify-content:space-between;font-size:0.6rem;margin-bottom:3px"><span style="color:rgba(255,255,255,0.3)">Conf</span><span class="mono" style="color:${barCol}">${conf}%</span></div><div style="width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden"><div style="width:${conf}%;height:100%;background:${barCol};border-radius:2px;transition:width 1s"></div></div></td><td><span class="tag xai" style="font-size:0.6rem"><i class="fa-solid fa-brain"></i> ${reason}</span></td><td><button class="btn-sm" style="background:rgba(168,85,247,0.12);color:var(--purple)" onclick="this.innerHTML='<i class=\\'fa-solid fa-spinner fa-spin\\'></i> Scanning';setTimeout(()=>this.innerHTML='<i class=\\'fa-solid fa-check\\'></i> Clear',1500)"><i class="fa-solid fa-circle-nodes"></i> GNN Scan</button></td>`;
+                tbody.appendChild(tr);
+            });
+            animVal('kpi-scan', 0, 10000, 1500);
+            animVal('kpi-anom', 0, data.length, 800);
+
+            // Fix for Seaborn Visualization
+            const seabornPh = document.getElementById('seaborn-ph');
+            const seabornPlot = document.getElementById('seaborn-plot');
+            if (seabornPh && seabornPlot) {
+                seabornPh.style.display = 'none';
+                seabornPlot.style.display = 'block';
+                seabornPlot.src = 'anomaly_cluster.png?t=' + new Date().getTime();
+            }
+
+            if(db) {
+                try {
+                    await addDoc(collection(db, "audit_history"), { date: new Date().toISOString(), rows: 10000, anomalies: data.length, fl_round: 847 });
+                } catch(e) { console.log("Write error:", e.message); }
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    // ==========================================
+    // KPI ANIMATION
+    // ==========================================
+    function animVal(id, s, e, dur) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        const range = e - s; const st = performance.now();
+        function upd(now) {
+            const p = Math.min((now - st) / dur, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = typeof e === 'number' && e > 10 ? Math.floor(s + range * eased).toLocaleString() : (s + range * eased).toFixed(1);
+            if(p < 1) requestAnimationFrame(upd);
+        }
+        requestAnimationFrame(upd);
+    }
+    window.animVal = animVal;
+
+    // XAI Bars
+    function animXAI() {
+        setTimeout(() => {
+            document.querySelectorAll('.xai-bar').forEach(b => { b.style.width = b.dataset.w; });
+        }, 300);
+    }
+
+    // ==========================================
+    // GNN GRAPH
+    // ==========================================
+    function drawGNN() {
+        const c = document.getElementById('gnn-canvas');
+        if(!c) return;
+        const ctx = c.getContext('2d');
+        const W = c.width, H = c.height;
+        ctx.clearRect(0, 0, W, H);
+        const nodes = [];
+        const cols = {employee:'#00f0ff', vendor:'#a855f7', flagged:'#ef4444'};
+        for(let i=0;i<40;i++){
+            const t = i<3?'flagged':['employee','vendor'][Math.floor(Math.random()*2)];
+            nodes.push({x:80+Math.random()*(W-160), y:50+Math.random()*(H-100), r:t==='flagged'?10:5+Math.random()*4, type:t});
+        }
+        for(let i=0;i<nodes.length;i++){
+            for(let c2=0;c2<1+Math.floor(Math.random()*3);c2++){
+                const j=Math.floor(Math.random()*nodes.length);
+                if(i===j) continue;
+                const fl = nodes[i].type==='flagged'||nodes[j].type==='flagged';
+                ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y);
+                ctx.strokeStyle=fl?'rgba(239,68,68,0.25)':'rgba(255,255,255,0.05)'; ctx.lineWidth=fl?1.5:0.5; ctx.stroke();
+            }
+        }
+        nodes.forEach(n=>{
+            if(n.type==='flagged'){ctx.beginPath();ctx.arc(n.x,n.y,n.r+8,0,Math.PI*2);ctx.fillStyle='rgba(239,68,68,0.1)';ctx.fill();}
+            ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle=cols[n.type];ctx.shadowBlur=n.type==='flagged'?15:6;ctx.shadowColor=cols[n.type];ctx.fill();ctx.shadowBlur=0;
+        });
+    }
+
+    // ==========================================
+    // CHART.JS — ADMIN CHARTS
+    // ==========================================
+    let chartsInit = false;
+    function initCharts() {
+        if(chartsInit) return;
+        chartsInit = true;
+        // Donut
+        new Chart(document.getElementById('fraud-donut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Split Invoices','Statistical Outliers','Missing Receipts','Shell Companies','Phantom Vendors'],
+                datasets: [{ data: [34, 22, 18, 15, 11], backgroundColor: ['#00f0ff','#a855f7','#f59e0b','#ef4444','#ec4899'], borderWidth: 0 }]
+            },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'rgba(255,255,255,0.5)', font:{size:11,family:'Inter'}, padding:15 }}}}
+        });
+        // Line
+        new Chart(document.getElementById('anomaly-line'), {
+            type: 'line',
+            data: {
+                labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                datasets: [{
+                    label: 'Anomalies Detected', data: [45,62,38,91,120,78,55,143,98,112,67,88],
+                    borderColor: '#00f0ff', backgroundColor: 'rgba(0,240,255,0.08)',
+                    fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#00f0ff', borderWidth: 2
+                }, {
+                    label: 'Resolved', data: [42,58,37,85,115,75,52,135,95,108,64,82],
+                    borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.05)',
+                    fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#22c55e', borderWidth: 2
+                }]
+            },
+            options: { responsive:true, maintainAspectRatio:false, scales:{ x:{ticks:{color:'rgba(255,255,255,0.3)',font:{size:10}},grid:{color:'rgba(255,255,255,0.03)'}}, y:{ticks:{color:'rgba(255,255,255,0.3)',font:{size:10}},grid:{color:'rgba(255,255,255,0.03)'}}}, plugins:{legend:{labels:{color:'rgba(255,255,255,0.5)',font:{size:11,family:'Inter'}}}}}
+        });
+    }
+
+    // Make globally available
+    window.animXAI = animXAI;
+    window.drawGNN = drawGNN;
+</script>
+
+<script>
+    // ==========================================
+    // LANDING: ANTI-GRAVITY GALAXY
+    // ==========================================
+    (function(){
+        const canvas = document.getElementById('landing-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+        const N = 50000;
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(N*3), col = new Float32Array(N*3), spd = new Float32Array(N);
+        const cCyan=new THREE.Color(0x00f0ff), cPurp=new THREE.Color(0xa855f7), cPink=new THREE.Color(0xec4899), cWhite=new THREE.Color(0xffffff);
+
+        for(let i=0;i<N;i++){
+            const i3=i*3, rad=Math.random()*12+0.5, spin=rad*1.2, branch=((i%5)/5)*Math.PI*2, ang=branch+spin;
+            const rx=Math.pow(Math.random(),3)*(Math.random()<0.5?1:-1)*1.5;
+            pos[i3]=Math.cos(ang)*rad+rx; pos[i3+1]=(Math.random()-0.5)*2.5; pos[i3+2]=Math.sin(ang)*rad+Math.pow(Math.random(),3)*(Math.random()<0.5?1:-1)*1.5;
+            spd[i]=0.002+Math.random()*0.008;
+            const c=new THREE.Color(), m=rad/12;
+            if(i%4===0)c.copy(cCyan);else if(i%4===1)c.lerpColors(cCyan,cPurp,m);else if(i%4===2)c.lerpColors(cPurp,cPink,m);else c.copy(cWhite).multiplyScalar(0.3+Math.random()*0.3);
+            col[i3]=c.r;col[i3+1]=c.g;col[i3+2]=c.b;
+        }
+        geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+        geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+        const galaxy=new THREE.Points(geo,new THREE.PointsMaterial({size:0.03,sizeAttenuation:true,vertexColors:true,transparent:true,opacity:0.7,blending:THREE.AdditiveBlending,depthWrite:false}));
+        scene.add(galaxy);
+
+        const sGeo=new THREE.BufferGeometry(),sPos=new Float32Array(3000*3);
+        for(let i=0;i<9000;i++)sPos[i]=(Math.random()-0.5)*100;
+        sGeo.setAttribute('position',new THREE.BufferAttribute(sPos,3));
+        scene.add(new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xffffff,size:0.05,transparent:true,opacity:0.4,blending:THREE.AdditiveBlending})));
+
+        camera.position.set(0,3,14); camera.lookAt(0,0,0);
+        let warp=false, warpSpd=0;
+        const clock=new THREE.Clock();
+
+        function anim(){
+            requestAnimationFrame(anim);
+            const t=clock.getElapsedTime(), p=geo.attributes.position.array;
+            for(let i=0;i<N;i++){p[i*3+1]+=spd[i];if(p[i*3+1]>5)p[i*3+1]=-5;}
+            geo.attributes.position.needsUpdate=true;
+            galaxy.rotation.y=t*0.08;
+            if(!warp){camera.position.x=Math.sin(t*0.2)*0.5;camera.position.y=3+Math.cos(t*0.15)*0.3;}
+            else{
+                warpSpd+=0.015;camera.position.z-=warpSpd;camera.fov=75+warpSpd*80;camera.updateProjectionMatrix();
+                if(camera.position.z<-30){
+                    document.getElementById('warp-flash').style.opacity='1';
+                    setTimeout(()=>{
+                        document.getElementById('landing-phase').style.opacity='0';
+                        setTimeout(()=>{
+                            document.getElementById('landing-phase').style.display='none';
+                            document.getElementById('login-phase').style.display='flex';
+                            document.getElementById('warp-flash').style.transition='opacity 0.6s';
+                            document.getElementById('warp-flash').style.opacity='0';
+                        },300);
+                    },150);
+                    warp=false;return;
+                }
+            }
+            renderer.render(scene,camera);
+        }
+        anim();
+        addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+        window.enterSystem=function(){warp=true;document.querySelector('.landing-overlay').style.transition='opacity 0.5s';document.querySelector('.landing-overlay').style.opacity='0';};
+    })();
+
+    // ==========================================
+    // TAGLINE TYPEWRITER
+    // ==========================================
+    (function(){
+        const lines=[
+            '> Federated Learning across 5 secure bank nodes...',
+            '> FHE processing on encrypted ledgers (CKKS)...',
+            '> GNN scanning 4,201 entity relationships...',
+            '> SHAP/LIME XAI audit trails generated...',
+            '> Zero Trust biometric authentication active...',
+            '> IEEE FraudGNN-RL v2.1 loaded...',
+            '> RBAC: Dual-role access control enforced...'
+        ];
+        const el=document.getElementById('landing-tag');
+        let li=0,ci=0,del=false;
+        function t(){
+            const cur=lines[li];
+            if(!del){el.textContent=cur.substring(0,ci+1);ci++;if(ci===cur.length){del=true;setTimeout(t,2000);return;}setTimeout(t,40);}
+            else{el.textContent=cur.substring(0,ci);ci--;if(ci===0){del=false;li=(li+1)%lines.length;}setTimeout(t,20);}
+        }
+        setTimeout(t,1000);
+    })();
+
+    // ==========================================
+    // APP 3D BACKGROUND (Shared)
+    // ==========================================
+    function initBG(canvasId) {
+        const canvas=document.getElementById(canvasId);
+        if(!canvas)return;
+        const scene=new THREE.Scene();
+        const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);
+        const renderer=new THREE.WebGLRenderer({canvas,alpha:true});
+        renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+        const C=5000,geo=new THREE.BufferGeometry(),p=new Float32Array(C*3),cl=new Float32Array(C*3);
+        const isAdmin=canvasId.includes('admin');
+        for(let i=0;i<C;i++){
+            p[i*3]=(Math.random()-0.5)*30;p[i*3+1]=(Math.random()-0.5)*30;p[i*3+2]=(Math.random()-0.5)*30;
+            const r=Math.random();
+            if(isAdmin){
+                if(r<0.5){cl[i*3]=0.66;cl[i*3+1]=0.33;cl[i*3+2]=0.97;}
+                else if(r<0.8){cl[i*3]=0.93;cl[i*3+1]=0.27;cl[i*3+2]=0.27;}
+                else{cl[i*3]=0.93;cl[i*3+1]=0.29;cl[i*3+2]=0.6;}
+            } else {
+                if(r<0.6){cl[i*3]=0;cl[i*3+1]=0.94;cl[i*3+2]=1;}
+                else if(r<0.85){cl[i*3]=0.66;cl[i*3+1]=0.33;cl[i*3+2]=0.97;}
+                else{cl[i*3]=0.93;cl[i*3+1]=0.29;cl[i*3+2]=0.6;}
+            }
+        }
+        geo.setAttribute('position',new THREE.BufferAttribute(p,3));
+        geo.setAttribute('color',new THREE.BufferAttribute(cl,3));
+        const mesh=new THREE.Points(geo,new THREE.PointsMaterial({size:0.025,vertexColors:true,transparent:true,opacity:0.2,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
+        scene.add(mesh);camera.position.z=8;
+        let mx=0,my=0;
+        document.addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-0.5)*2;my=(e.clientY/innerHeight-0.5)*2;});
+        function anim(){requestAnimationFrame(anim);mesh.rotation.y+=0.0005;mesh.rotation.x+=0.0002;camera.position.x+=(mx*0.5-camera.position.x)*0.02;camera.position.y+=(-my*0.3-camera.position.y)*0.02;renderer.render(scene,camera);}
+        anim();
+        addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+    }
+
+    // FL Sync Animation
+    (function(){
+        setInterval(()=>{
+            document.querySelectorAll('.fl-bar').forEach(b=>{
+                const w=parseFloat(b.style.width);
+                if(w<100&&w>0){
+                    const nw=Math.min(w+Math.random()*3,100);
+                    b.style.width=nw+'%';
+                    const node=b.closest('.fl-node');
+                    if(node){
+                        const st=node.querySelector('.mono'),dot=node.querySelector('.fl-dot');
+                        if(nw>=100&&st){st.textContent='SYNCED';st.style.color='var(--green)';if(dot)dot.className='fl-dot synced';}
+                        else if(st&&nw<100)st.textContent=`SYNCING ${Math.floor(nw)}%`;
+                    }
+                }
+            });
+        },2000);
+    })();
+    // ==========================================
+    // RAZORPAY INTEGRATION
+    // ==========================================
+    window.payWithRazorpay = function(amount, planName) {
+        var options = {
+            "key": "rzp_test_SjDvirFREAQxKp", 
+            "amount": amount * 100, 
+            "currency": "USD",
+            "name": "Ledger AI",
+            "description": planName + " Subscription",
+            "image": "https://cdn-icons-png.flaticon.com/512/963/963784.png",
+            "handler": function (response){
+                alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+                addLog(`User upgraded to ${planName}. Payment ID: ${response.razorpay_payment_id}`, 'INFO', 'Billing Service');
+            },
+            "prefill": {
+                "name": document.getElementById('login-email').value.split('@')[0] || "Ledger Analyst",
+                "email": document.getElementById('login-email').value || "analyst@kpmg.com",
+                "contact": "9999999999"
+            },
+            "theme": {
+                "color": "#a855f7"
+            }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.on('payment.failed', function (response){
+            alert("Payment Failed: " + response.error.description);
+        });
+        rzp1.open();
+    };
+
+    // Initialize stars (3D background)
+    initBG('login-bg-canvas');
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+[
+    {
+        "transaction_id": "TXN_999990",
+        "employee_id": "EMP_101",
+        "vendor_name": "V_004_Staples",
+        "transaction_date": "2023-05-15",
+        "amount": 499.0,
+        "receipt_id": "REC_8881",
+        "flag_statistical_outlier": false,
+        "flag_potential_split": true,
+        "flag_missing_documentation": false,
+        "ai_audit_note": "Based on the provided transaction data, this transaction is suspicious due to potential irregularities in vendor reimbursement, as the 'flag_potential_split' field is marked as true. This suggests that there may be an attempt to split a single transaction into multiple receipts, which warrants further investigation to ensure compliance with internal controls and policies."
+    },
+    {
+        "transaction_id": "TXN_999991",
+        "employee_id": "EMP_101",
+        "vendor_name": "V_004_Staples",
+        "transaction_date": "2023-05-15",
+        "amount": 495.5,
+        "receipt_id": "REC_8882",
+        "flag_statistical_outlier": false,
+        "flag_potential_split": true,
+        "flag_missing_documentation": false,
+        "ai_audit_note": "Based on the provided transaction data, this transaction is suspicious due to its potential involvement in a split payment scheme ('flag_potential_split' = true), which may be indicative of fraudulent activities or invoice manipulation. Furthermore, our analysis recommends closely examining the transaction to ensure its legitimacy and compliance with established company policies and fiscal guidelines."
+    },
+    {
+        "transaction_id": "TXN_999992",
+        "employee_id": "EMP_122",
+        "vendor_name": "V_003_AWS",
+        "transaction_date": "2023-08-20",
+        "amount": 2500.0,
+        "receipt_id": null,
+        "flag_statistical_outlier": false,
+        "flag_potential_split": false,
+        "flag_missing_documentation": true,
+        "ai_audit_note": "Based on the provided data, this transaction is suspicious because it lacks necessary documentation to support its legitimacy, as indicated by the \"flag_missing_documentation\" field being marked true. This raises concerns regarding the accuracy and authenticity of the transaction, which should be further investigated to ensure compliance with organizational standards."
+    },
+    {
+        "transaction_id": "TXN_999993",
+        "employee_id": "EMP_140",
+        "vendor_name": "V_001_Uber",
+        "transaction_date": "2023-11-02",
+        "amount": 5430.0,
+        "receipt_id": "REC_9999",
+        "flag_statistical_outlier": true,
+        "flag_potential_split": false,
+        "flag_missing_documentation": false,
+        "ai_audit_note": "This transaction is suspicious for being a statistical outlier, indicating that it significantly deviates from the norm in terms of its total value of $5430.00, which warrants further investigation to ensure compliance with organizational spending policies."
+    }
+]
