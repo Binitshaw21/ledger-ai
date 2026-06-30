@@ -223,7 +223,10 @@
         <button class="login-submit" id="login-btn" style="background:linear-gradient(135deg,var(--cyan),var(--purple));" onclick="handleLogin()">
             <i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> <span id="login-btn-text">REGISTER NOW</span>
         </button>
-        <p style="text-align:center;margin-top:0.8rem;font-size:0.75rem;"><a href="#" id="toggle-signup" onclick="toggleSignUp(event)" style="color:var(--cyan);text-decoration:none;">Already have an account? Log In</a></p>
+        <button class="login-submit" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); margin-top:0.8rem;" onclick="demoLogin()">
+            <i class="fa-solid fa-bolt" style="margin-right:6px; color:var(--amber);"></i> Quick Demo Access (Bypass Auth)
+        </button>
+        <p style="text-align:center;margin-top:1rem;font-size:0.75rem;"><a href="#" id="toggle-signup" onclick="toggleSignUp(event)" style="color:var(--cyan);text-decoration:none;">Already have an account? Log In</a></p>
         <p style="text-align:center;margin-top:1rem;font-size:0.65rem;color:rgba(255,255,255,0.15);">Compliant with EU AI Act 2025 & GDPR • RBAC Enabled</p>
     </div>
 </div>
@@ -750,6 +753,28 @@
                 loadHistory();
             }
             setTimeout(animXAI, 150);
+        }, 200);
+    };
+
+    window.demoLogin = function() {
+        const role = document.getElementById('role-select').value;
+        const email = role === 'admin' ? 'demo_admin@ledger.ai' : 'demo_analyst@ledger.ai';
+        
+        document.getElementById('login-phase').style.transition = 'opacity 0.2s';
+        document.getElementById('login-phase').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('login-phase').style.display = 'none';
+            if(role === 'admin') {
+                document.getElementById('admin-app').style.display = 'flex';
+                if(typeof initBG === 'function') initBG('admin-bg-canvas');
+                if(typeof loadUsers === 'function') loadUsers();
+                if(typeof addLog === 'function') addLog(`Admin ${email} via Demo Bypass`, 'INFO', 'Auth Service');
+            } else {
+                document.getElementById('analyst-app').style.display = 'flex';
+                if(typeof initBG === 'function') initBG('bg-canvas');
+                if(typeof animVal === 'function') animVal('kpi-fl', 0, 847, 2000);
+                if(typeof loadHistory === 'function') loadHistory();
+            }
         }, 200);
     };
 
